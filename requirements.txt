@@ -1,0 +1,15 @@
+tensorboard
+opencv-python
+imageio
+imageio-ffmpeg
+configargparse
+scipy
+matplotlib
+tqdm
+mrc
+lpips
+sacrebleu
+scikit-learn
+scikit-image
+numpy==1.23.0
+pytorch3d

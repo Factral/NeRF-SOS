@@ -160,21 +160,21 @@ def evaluate(model, dataset, device, save_dir=None, fast_mode=False, ret_cluster
 
         if save_dir is not None:
             # np.save(os.path.join(save_dir, f'rgb_{i:03d}.npy'), img)
-            imageio.imwrite(os.path.join(save_dir, f'rgb_{i:03d}.png'), to8b(img))
+            cv2.imwrite(os.path.join(save_dir, f'rgb_{i:03d}.png'), to8b(img))
 
             # np.save(os.path.join(save_dir, f'depth_{i:03d}.npy'), depth)
-            imageio.imwrite(os.path.join(save_dir, f'depth_{i:03d}.png'), to8b(depth / np.max(depth)))
+            cv2.imwrite(os.path.join(save_dir, f'depth_{i:03d}.png'), to8b(depth / np.max(depth)))
             depth = depth.squeeze(-1)
             depth = colorize_np(depth, cmap_name='jet', append_cbar=True)
-            imageio.imwrite(os.path.join(save_dir, f'depth_{i:03d}_.png'), to8b(depth / np.max(depth)))
+            cv2.imwrite(os.path.join(save_dir, f'depth_{i:03d}_.png'), to8b(depth / np.max(depth)))
 
             # np.save(os.path.join(save_dir, f'alpha_{i:03d}.npy'), alpha)
-            imageio.imwrite(os.path.join(save_dir, f'alpha_{i:03d}.png'), to8b(alpha / np.max(alpha)))
+            cv2.imwrite(os.path.join(save_dir, f'alpha_{i:03d}.png'), to8b(alpha / np.max(alpha)))
 
             if 'semantics' in ret_dict.keys():
-                imageio.imwrite(os.path.join(save_dir, f'sem_{i:03d}.png'), sem)
+                cv2.imwrite(os.path.join(save_dir, f'sem_{i:03d}.png'), sem)
             if ret_cluster:
-                imageio.imwrite(os.path.join(save_dir, f'clus_{i:03d}.png'), clustering)
+                cv2.imwrite(os.path.join(save_dir, f'clus_{i:03d}.png'), clustering)
                 cv2.imwrite(os.path.join(save_dir, f'clus_{i:03d}_cv2.png'), clustering)
 
     total_mse = np.array(all_metrics['mse']).mean()

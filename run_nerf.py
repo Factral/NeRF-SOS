@@ -245,6 +245,7 @@ def create_arg_parser():
                         help='rand_neg')
     return parser
 
+
 def main(args):
 
     if args.no_semantics:
@@ -304,6 +305,7 @@ def main(args):
             raw_noise_std=args.raw_noise_std, white_bkgd=args.white_bkgd, use_semantics=args.use_semantics, sem_layer=args.sem_layer, sem_dim=args.sem_dim,
             sem_with_coord=args.sem_with_coord).to(device)
 
+
     if args.fix_backbone:
         from utils.misc import find_params
         my_list = 'semantic_linear'
@@ -313,7 +315,7 @@ def main(args):
         for p in model.nerf.mlp.named_parameters():
             if my_list not in p[0]:
                 p[1].requires_grad=False
-        for p in model.nerf_fine.mlp.named_parameters():
+        for p in model.nerf_fine.mlp.named_parameters(): # what is nerf_fine ?
             if my_list not in p[0]:
                 p[1].requires_grad=False
 
@@ -321,14 +323,17 @@ def main(args):
     scheduler = LRScheduler(optimizer=optimizer, init_lr=args.lrate, decay_rate=args.decay_rate, decay_steps=args.decay_step*1000)
     print(f'[Check require grad or not]: {list(model.nerf_fine.mlp.pts_linears[0].parameters())[0].requires_grad}')
 
-    if args.use_dino:
+    if args.use_dino: # DINO
         dino = VitExtractor(model_name='dino_vits16', device=device)
         # dino = Dino(arch='vit_small', patch_size=8, image_size=(args.patch_size, args.patch_size), device=device, fix=True, \
         #     ckpt_path='', checkpoint_key='teacher')
     else:
         dino = None
+
+
     print("Num of Params:", sum(p.numel() for p in model.parameters() if p.requires_grad))
     global_step = 0
+
 
     # find and load checkpoint
     ckpt_path = args.ckpt_path
@@ -340,14 +345,17 @@ def main(args):
             sort_fn = lambda x: os.path.splitext(x)[0]
             ckpt_files = sorted(ckpt_files, key=sort_fn)
             ckpt_path = os.path.join(ckpt_dir, ckpt_files[-1])
-    if ckpt_path not in [None, 'None', '']:
+
+    if ckpt_path not in [None, 'None', '']: # wtf this
         if not os.path.exists(ckpt_path):
             print(f"[Error:] ckpt path {ckpt_path} not exist!")
             exit(0)
+    
     ckpt_dict = None
+
     if os.path.exists(ckpt_path):
         print(f'>>> Load strict: {not args.load_nostrict}')
-        ckpt_dict = torch.load(ckpt_path, map_location='cpu')
+        ckpt_dict = torch.load(ckpt_path, map_location=device)
 
     # reload from checkpoint
     if ckpt_dict is not None:
@@ -359,14 +367,17 @@ def main(args):
         except:
              print(f"[Error]: optimizer initialization failed!")
 
+
     # Create eval dataset
     print("Loading nerf data:", args.data_path)
     test_set = RayNeRFDataset(args.data_path, args, subsample=args.subsample, split='test', cam_id=False, use_masks=args.use_masks)
+    
     try:
         exhibit_set = ExhibitNeRFDataset(args.data_path, args, subsample=args.subsample, use_semantics=False)
     except FileNotFoundError:
         exhibit_set = None
         print("Warning: No exhibit set!")
+
 
     ####### Evaluate #######
     if args.eval:

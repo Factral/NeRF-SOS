@@ -118,6 +118,7 @@ class BaseNeRFDataset(torch.utils.data.Dataset):
     def radii(self):
         return 2. / max(self.height, self.width) * 2 / math.sqrt(12)
 
+
 class RayNeRFDataset(BaseNeRFDataset):
 
     def __init__(self, root_dir, args, split='train', subsample=0, cam_id=False, use_masks=True, bin_thres=0.3):

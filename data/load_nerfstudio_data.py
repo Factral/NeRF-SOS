@@ -5,6 +5,8 @@ import torch
 import cv2
 from pathlib import Path
 
+
+# extracted from load_blender.py
 trans_t = lambda t : torch.Tensor([
     [1,0,0,0],
     [0,1,0,0],
@@ -23,7 +25,6 @@ rot_theta = lambda th : torch.Tensor([
     [np.sin(th),0, np.cos(th),0],
     [0,0,0,1]]).float()
 
-
 def pose_spherical(theta, phi, radius):
     c2w = trans_t(radius)
     c2w = rot_phi(phi/180.*np.pi) @ c2w
@@ -31,7 +32,8 @@ def pose_spherical(theta, phi, radius):
     c2w = torch.Tensor(np.array([[-1,0,0,0],[0,0,1,0],[0,1,0,0],[0,0,0,1]])) @ c2w
     return c2w
 
-def load_spectral_data(basedir):
+
+def load_nerfstudio_data(basedir):
     """
     Load spectral data from the nerfacto format dataset.
     

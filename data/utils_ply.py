@@ -7,6 +7,7 @@ def save_pc(PC, PC_color=None, filename="pc.ply"):
         PC_color = np.zeros_like(PC)
         
     PC = np.concatenate((PC, PC_color), axis=1)
+    print(PC.shape)
     PC = [tuple(element) for element in PC]
     el = PlyElement.describe(
         np.array(

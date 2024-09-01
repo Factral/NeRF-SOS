@@ -25,7 +25,8 @@ from data.load_blender import load_blender_data
 from data.load_tankstemple import load_tankstemple_data
 from data.load_toydesk import load_toydesk_data
 from data.load_toydesk_custom import load_toydesk_custom_data
-from data.load_spectral_data import load_spectral_data
+from data.load_nerfstudio_data import load_nerfstudio_data
+from data.utils_ply import save_pc
 
 import configargparse
 
@@ -175,23 +176,17 @@ def generate_dataset(args, output_path):
             far = np.ndarray.max(bds) * 1.
         print('NEAR FAR', near, far)
 
-    elif args.data_type == 'spectral':
-        images, poses, render_poses, hwf, i_split = load_spectral_data(args.data_path)
-        print('Loaded spectral', images.shape, render_poses.shape, hwf, args.data_path)
+    elif args.data_type == 'nerfstudio':
+        images, poses, render_poses, hwf, i_split = load_nerfstudio_data(args.data_path)
+        print('Loaded nerfstudio', images.shape, render_poses.shape, hwf, args.data_path)
         i_train, i_val, i_test = i_split
 
-        near = 2.
-        far = 6.
-
-        if args.white_bkgd:
-            images = images[...,:3]*images[...,-1:] + (1.-images[...,-1:])
-        else:
-            images = images[...,:3]
+        near = 2. # ?
+        far = 2. # ?
 
     else:
         print('Unknown dataset type:', args.data_type)
         exit(-1)
-
 
 
 
@@ -204,9 +199,29 @@ def generate_dataset(args, output_path):
     print('Train/valid/test split', i_train, i_val, i_test)
 
     print('Calculating train/valid/test rays ...')
-    rays = torch.stack([get_persp_rays(H, W, K, torch.tensor(p)) for p in tqdm(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
-    rays = rays.permute([0, 2, 3, 1, 4]).numpy().astype(np.float32) # [N, H, W, ro+rd, 3]
+    rays_raw = torch.stack([get_persp_rays(H, W, K, torch.tensor(p)) for p in tqdm(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
+    
+    rays = rays_raw.permute([0, 2, 3, 1, 4]).numpy().astype(np.float32) # [N, H, W, ro+rd, 3]
     print('Done.', rays.shape)
+
+
+    print('Generating ray visualization...')
+    rays_to_plot = rays[0,:,:]
+    ray_origins = rays_to_plot[..., 0, :] # origin
+    ray_directions = rays_to_plot[..., 1, :] # direction
+    
+    ray_endpoints = ray_origins + ray_directions * far
+    
+    points = np.concatenate([ray_origins.reshape(-1, 3), ray_endpoints.reshape(-1, 3)], axis=0) # 
+    
+    colors = np.zeros_like(points)
+    lenorigins = len(ray_origins.reshape(-1, 3))
+    colors[:lenorigins] = [0, 0, 255]  # Color for origins
+    colors[lenorigins:] = [255, 0, 0]  # Color for endpoints
+    
+    save_pc(points, colors, os.path.join(output_path, 'rays_visualization.ply'))
+    print('Ray visualization saved to', os.path.join(output_path, 'rays_visualization.ply'))
+
 
     print('Splitting train/valid/test rays ...')
     if args.mask:

@@ -121,8 +121,8 @@ def train_one_step(batch, model, optimizer, scheduler, train_loader, global_step
         loss = loss + (args.rgb_w * img_loss0)
 
     sem_loss0, sem_loss1 = torch.Tensor([0]), torch.Tensor([0])
-    
-    similarity_matrix = get_similarity_matrix(cls_)
+    if args.use_dino:
+        similarity_matrix = get_similarity_matrix(cls_)
 
     if args.use_correlation:
         # semantics0 = ret_dict['semantics0'].softmax(dim=-1)

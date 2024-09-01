@@ -128,9 +128,12 @@ def evaluate(model, dataset, device, save_dir=None, fast_mode=False, ret_cluster
                 # print("> clustering.shape:", clustering.shape)
                 # clustering = seg2color(clustering.squeeze(-1), color_pallete)
         
-        clustering = ret_dict["clustering"]
-        sem = ret_dict["sem"]
-        if find_fg:
+        if 'sem' in ret_dict.keys():
+            clustering = ret_dict["clustering"]
+            sem = ret_dict["sem"]
+
+
+        if find_fg and 'sem' in ret_dict.keys():
             dino_in = ret_dict['rgb'].to(device)
             dino_in = dino_in.unsqueeze(0).permute(0, 3, 1, 2)
             dino_in = normalize_batch(dino_in)
@@ -143,14 +146,16 @@ def evaluate(model, dataset, device, save_dir=None, fast_mode=False, ret_cluster
             if np.mean(attn[clustering==1]) < np.mean(attn[clustering==0]):
                 clustering = np.ones_like(clustering) - clustering
         print()
-        print(np.unique(clustering), np.sum(clustering==0), np.sum(clustering==1))
-        print(np.unique(sem), np.sum(sem==0), np.sum(sem==1))
-        clustering = (clustering * 255).astype(np.uint8)
-        sem = (sem * 255).astype(np.uint8)
-        # clustering = seg2color(clustering.squeeze(-1), color_pallete)
-        # sem = seg2color(sem.squeeze(-1), color_pallete)
-        print(np.unique(clustering), np.sum(clustering==0), np.sum(clustering==1))
-        print(np.unique(sem), np.sum(sem==0), np.sum(sem==1))
+
+        if 'sem' in ret_dict.keys():
+            print(np.unique(clustering), np.sum(clustering==0), np.sum(clustering==1))
+            print(np.unique(sem), np.sum(sem==0), np.sum(sem==1))
+            clustering = (clustering * 255).astype(np.uint8)
+            sem = (sem * 255).astype(np.uint8)
+            # clustering = seg2color(clustering.squeeze(-1), color_pallete)
+            # sem = seg2color(sem.squeeze(-1), color_pallete)
+            print(np.unique(clustering), np.sum(clustering==0), np.sum(clustering==1))
+            print(np.unique(sem), np.sum(sem==0), np.sum(sem==1))
 
 
         print(f"[TEST] Iter {i+1}/{len(dataset)} MSE: {metric_dict['mse'].item()} PSNR: {metric_dict['psnr'].item()} "
@@ -232,7 +237,8 @@ def render_video(model, dataset, device, save_dir, suffix='', fps=30, quality=8,
         ret_dict, metric_dict = eval_one_view(model, batch, (near, far), radii=radii, device=device, clus_no_sfm=clus_no_sfm, N_cluster=N_cluster, **render_kwargs)
         if 'sem' in ret_dict.keys():
             sems.append(ret_dict['sem'])
-        if ret_cluster:
+
+        if ret_cluster and find_fg:
             clustering = ret_dict['clustering']
             if find_fg:
                 dino_in = ret_dict['rgb'].to(device)

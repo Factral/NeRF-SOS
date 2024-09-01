@@ -470,8 +470,10 @@ def main(args):
                         contrast_loss.verbose = True
 
                 if (global_step % args.i_print == 0 and global_step > 0) or global_step==1:
-                    geoCorrelation_loss.verbose = True
-                    correlation_loss.verbose = True
+                    if geoCorrelation_loss is not None:
+                        geoCorrelation_loss.verbose = True
+                    if correlation_loss is not None:
+                        correlation_loss.verbose = True
 
                     avg_time = (time.time() - time0) / args.i_print
                     print(f"[Logging infor]: expname: {args.expname}")
@@ -495,6 +497,7 @@ def main(args):
                     # Output test images to tensorboard
                     ret_dict, metric_dict = eval_one_view(model, test_set[args.log_img_idx], (near, far), radii=test_set.radii(), device=device)
                     summary_writer.add_image('test/rgb', to8b(ret_dict['rgb'].numpy()), global_step, dataformats='HWC')
+                    print(ret_dict['disp'].shape, np.max(ret_dict['disp'].numpy()))
                     summary_writer.add_image('test/disp', to8b(ret_dict['disp'].numpy() / np.max(ret_dict['disp'].numpy())), global_step, dataformats='HWC')
 
                     # Render test set to tensorboard looply
@@ -516,7 +519,8 @@ def main(args):
                     save_dir = os.path.join(run_dir, 'testset_{:08d}'.format(global_step))
                     os.makedirs(save_dir, exist_ok=True)
                     metric_dict = evaluate(model, test_set, device=device, save_dir=save_dir,
-                        fast_mode=args.fast_mode, ret_cluster=args.ret_cluster, clus_no_sfm=args.clus_no_sfm)
+                        fast_mode=args.fast_mode, ret_cluster=args.ret_cluster, clus_no_sfm=args.clus_no_sfm,
+                        find_fg=True if args.use_semantics else False)
 
                     # log testing metric
                     summary_writer.add_scalar('test/mse', metric_dict['mse'], global_step)
@@ -526,6 +530,7 @@ def main(args):
                 if global_step % args.i_video==0 and global_step > 0 and exhibit_set is not None:
                     render_video(model, exhibit_set, device=device, save_dir=run_dir, suffix=str(global_step),
                     fast_mode=args.fast_mode, ret_cluster=args.ret_cluster, clus_no_sfm=args.clus_no_sfm, N_cluster=args.N_cluster)
+                    print(f"Exhibition video saved at {run_dir}")
 
                 # End training if finished
                 if global_step >= args.max_steps:

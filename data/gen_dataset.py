@@ -173,9 +173,25 @@ def generate_dataset(args, output_path):
             far = np.ndarray.max(bds) * 1.
         print('NEAR FAR', near, far)
 
+    elif args.data_type == 'spectral':
+        images, poses, render_poses, hwf, i_split = load_spectral_data(args.data_path)
+        print('Loaded spectral', images.shape, render_poses.shape, hwf, args.data_path)
+        i_train, i_val, i_test = i_split
+
+        near = 2.
+        far = 6.
+
+        if args.white_bkgd:
+            images = images[...,:3]*images[...,-1:] + (1.-images[...,-1:])
+        else:
+            images = images[...,:3]
+
     else:
         print('Unknown dataset type:', args.data_type)
         exit(-1)
+
+
+
 
     # Cast intrinsics to right types
     H, W, focal = hwf

@@ -91,4 +91,4 @@ def load_spectral_data(basedir):
 
     render_poses = torch.stack([pose_spherical(angle, -30.0, 4.0) for angle in np.linspace(-180, 180, 40+1)[:-1]], 0)
 
-    return imgs, poses, render_poses, [h, w, focal], K, i_split
+    return imgs, poses, render_poses, [h, w, focal], i_split

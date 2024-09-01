@@ -25,16 +25,16 @@ from data.load_blender import load_blender_data
 from data.load_tankstemple import load_tankstemple_data
 from data.load_toydesk import load_toydesk_data
 from data.load_toydesk_custom import load_toydesk_custom_data
+from data.load_spectral_data import load_spectral_data
 
 import configargparse
 
 
 def create_arg_parser():
     parser = configargparse.ArgumentParser()
-    parser.add_argument('--config', is_config_file=True, help='Path to config file')
     parser.add_argument('--data_type', '--dataset_type', type=str, required=True, help='Dataset type',
         choices=['llff', 'blender', 'LINEMOD', 'deepvoxels', 'tankstemple', 'toydesk', 'toydesk_custom', 'dtu',
-        'tankstemple_custom', 'synthetic_custom'])
+        'tankstemple_custom', 'synthetic_custom', 'spectral'])
     parser.add_argument('--data_path', '--datadir', type=str, required=True, help='Path to dataset directory')
     parser.add_argument('--output_path', type=str, default='', help='Path to save processed dataset directory')
 
@@ -64,6 +64,8 @@ def create_arg_parser():
                         help='inverse y when generating dataset and render')
 
     parser.add_argument("--w_pose", action="store_true", default=False, help='save poses')
+    parser.add_argument("--mask", action="store_true", default=False, help='mask or not')
+
 
     return parser
 
@@ -207,9 +209,14 @@ def generate_dataset(args, output_path):
     print('Done.', rays.shape)
 
     print('Splitting train/valid/test rays ...')
-    rays_train, rgbs_train, masks_train = rays[i_train], images[i_train], masks[i_train]
-    rays_val, rgbs_val, masks_val = rays[i_val], images[i_val], masks[i_val]
-    rays_test, rgbs_test, masks_test = rays[i_test], images[i_test], masks[i_test]
+    if args.mask:
+        rays_train, rgbs_train, masks_train = rays[i_train], images[i_train], masks[i_train]
+        rays_val, rgbs_val, masks_val = rays[i_val], images[i_val], masks[i_val]
+        rays_test, rgbs_test, masks_test = rays[i_test], images[i_test], masks[i_test]
+    else:
+        rays_train, rgbs_train = rays[i_train], images[i_train]
+        rays_val, rgbs_val = rays[i_val], images[i_val]
+        rays_test, rgbs_test = rays[i_test], images[i_test]
 
     print('Calculating exhibition rays ...')
     if render_poses is None:
@@ -227,15 +234,18 @@ def generate_dataset(args, output_path):
     print('Saving to: ', output_path)
     np.save(os.path.join(output_path, 'rays_train.npy'), rays_train)
     np.save(os.path.join(output_path, 'rgbs_train.npy'), rgbs_train)
-    np.save(os.path.join(output_path, 'masks_train.npy'), masks_train)
+    if args.mask:
+        np.save(os.path.join(output_path, 'masks_train.npy'), masks_train)
 
     np.save(os.path.join(output_path, 'rays_val.npy'), rays_val)
     np.save(os.path.join(output_path, 'rgbs_val.npy'), rgbs_val)
-    np.save(os.path.join(output_path, 'masks_val.npy'), masks_val)
+    if args.mask:
+        np.save(os.path.join(output_path, 'masks_val.npy'), masks_val)
 
     np.save(os.path.join(output_path, 'rays_test.npy'), rays_test)
     np.save(os.path.join(output_path, 'rgbs_test.npy'), rgbs_test)
-    np.save(os.path.join(output_path, 'masks_test.npy'), masks_test)
+    if args.mask:
+        np.save(os.path.join(output_path, 'masks_test.npy'), masks_test)
 
     np.save(os.path.join(output_path, 'rays_exhibit.npy'), rays_exhibit)
 
@@ -253,7 +263,9 @@ def generate_dataset(args, output_path):
         'H': H, 'W': W, 'focal': float(focal),
         'near': float(near), 'far': float(far),
 
-        'i_train': i_train.tolist(), 'i_val': i_val.tolist(), 'i_test': i_test.tolist(),
+        'i_train': i_train.tolist() if isinstance(i_train, np.ndarray) else i_train,
+        'i_val': i_val.tolist() if isinstance(i_val, np.ndarray) else i_val,
+        'i_test': i_test.tolist() if isinstance(i_test, np.ndarray) else i_test,
 
         'ndc': args.ndc, 'factor': args.factor,
         'spherify': args.spherify, 'llffhold': args.llffhold,

@@ -57,7 +57,7 @@ def create_arg_parser():
     parser.add_argument("--data_path", "--datadir", type=str, required=True,
                         help='input data directory')
     parser.add_argument('--data_type', '--dataset_type', type=str, required=True,
-                        help='dataset type', choices=['llff', 'blender', 'LINEMOD', 'deepvoxels', 'toydesk',
+                        help='dataset type', choices=['nerfstudio','llff', 'blender', 'LINEMOD', 'deepvoxels', 'toydesk',
                         'toydesk_custom', 'tankstemple_custom'])
     parser.add_argument("--subsample", type=int, default=0,
                     help='subsampling rate if applicable')

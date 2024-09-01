@@ -1,6 +1,6 @@
 expname = basil
 basedir = ./logs
-datadir = ./data/datasets/basil_hs
+datadir = ./data/datasets/basil_nerfstudio
 dataset_type = nerfstudio
 
 N_rand = 4096

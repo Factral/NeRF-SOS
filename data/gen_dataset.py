@@ -100,6 +100,7 @@ def generate_dataset(args, output_path):
         print('NEAR FAR', near, far)
 
     elif args.data_type == 'blender':
+        print("blender")
         images, poses, render_poses, hwf, i_split = load_blender_data(args.data_path, args.half_res, args.test_skip)
         print('Loaded blender', images.shape, render_poses.shape, hwf, args.data_path)
         i_train, i_val, i_test = i_split
@@ -205,7 +206,7 @@ def generate_dataset(args, output_path):
 
 
     print('Generating ray visualization...')
-    rays_to_plot = rays[0,:,:]
+    rays_to_plot = rays[0:2,::6,::6]
     ray_origins = rays_to_plot[..., 0, :] # origin
     ray_directions = rays_to_plot[..., 1, :] # direction
     

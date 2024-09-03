@@ -408,6 +408,7 @@ def main(args):
         export_density(model, extents=extents, voxel_size=args.vol_size, device=device, save_dir=save_dir)
         exit(0)
 
+
     ####### Training stage #######
     if not args.eval:
         # Create train dataset

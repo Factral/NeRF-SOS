@@ -126,6 +126,7 @@ class RayNeRFDataset(BaseNeRFDataset):
         super().__init__(root_dir, args, split=split, subsample=subsample, cam_id=cam_id, rgb=True, use_masks=use_masks, bin_thres=bin_thres)
 
         self.use_masks = use_masks
+        print("usar mascaras",use_masks)
         # Cast to tensors
         self.rays = torch.from_numpy(self.rays).float()
         self.rgbs = torch.from_numpy(self.rgbs).float()

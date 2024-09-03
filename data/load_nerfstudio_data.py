@@ -72,11 +72,11 @@ def load_nerfstudio_data(basedir):
     i_split = [[], [], []]  # train, val, test
 
     for i, frame in enumerate(frames):
+        print(frame['file_path'])
         fname = os.path.join(basedir, frame['file_path'])
         imgs.append(cv2.imread(fname)[:, :, ::-1] / 255.0)
         poses.append(np.array(frame['transform_matrix']))
         
-        # Assuming a simple 80-10-10 split for train-val-test
         if i < int(len(frames) * 0.8):
             i_split[0].append(i)
         elif i < int(len(frames) * 0.9):
@@ -91,6 +91,7 @@ def load_nerfstudio_data(basedir):
     # why dont we take the mean of the focal length in x and y?
     focal = float(K[0,0]) 
 
+    # extracted from load_blender.py
     render_poses = torch.stack([pose_spherical(angle, -30.0, 4.0) for angle in np.linspace(-180, 180, 40+1)[:-1]], 0)
 
     return imgs, poses, render_poses, [h, w, focal], i_split

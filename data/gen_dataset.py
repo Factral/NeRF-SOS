@@ -35,7 +35,7 @@ def create_arg_parser():
     parser = configargparse.ArgumentParser()
     parser.add_argument('--data_type', '--dataset_type', type=str, required=True, help='Dataset type',
         choices=['llff', 'blender', 'LINEMOD', 'deepvoxels', 'tankstemple', 'toydesk', 'toydesk_custom', 'dtu',
-        'tankstemple_custom', 'synthetic_custom', 'spectral'])
+        'tankstemple_custom', 'synthetic_custom', 'nerfstudio'])
     parser.add_argument('--data_path', '--datadir', type=str, required=True, help='Path to dataset directory')
     parser.add_argument('--output_path', type=str, default='', help='Path to save processed dataset directory')
 
@@ -180,9 +180,8 @@ def generate_dataset(args, output_path):
         images, poses, render_poses, hwf, i_split = load_nerfstudio_data(args.data_path)
         print('Loaded nerfstudio', images.shape, render_poses.shape, hwf, args.data_path)
         i_train, i_val, i_test = i_split
-
-        near = 2. # ?
-        far = 2. # ?
+        
+        near, far = inward_nearfar_heuristic(poses[i_train, :3, 3])
 
     else:
         print('Unknown dataset type:', args.data_type)

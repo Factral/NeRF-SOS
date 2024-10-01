@@ -1,6 +1,6 @@
 expname = chair_custom
 basedir = ./logs
-datadir = ./datasets/chair_custom
+datadir = ./data/datasets/nerf_synthetic/chair
 dataset_type = synthetic_custom
 
 N_rand = 4096

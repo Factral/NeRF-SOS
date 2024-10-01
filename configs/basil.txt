@@ -3,11 +3,12 @@ basedir = ./logs
 datadir = ./data/datasets/basil_nerfstudio
 dataset_type = nerfstudio
 
-N_rand = 4096
-N_samples = 64
-N_importance = 128
+no_batching = True
 
 use_viewdirs = True
-raw_noise_std = 1e0
-use_masks = False
+white_bkgd = True
+lrate_decay = 500
 
+N_samples = 64
+N_importance = 128
+N_rand = 4096

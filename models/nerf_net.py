@@ -87,7 +87,7 @@ class NeRFNet(nn.Module):
           pts0: See acc_map. Output for coarse model.
           z_std: [N_rays]. Standard deviation of distances along ray for each sample.
         """
-        bounds = torch.cat([near, far], -1) # [N_rays, 2]
+        bounds = torch.cat([torch.tensor(near).cuda(1), torch.tensor(far).cuda(1)], -1) # [N_rays, 2]
 
         # Primary sampling
         pts, z_vals = self.point_sampler(rays_o, rays_d, bounds, **kwargs)  # [N_rays, N_samples, 3]

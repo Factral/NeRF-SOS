@@ -31,6 +31,73 @@ from data.utils_ply import save_pc
 import configargparse
 
 
+class AABBBoxCollider():
+    """Module for colliding rays with the scene box to compute near and far values.
+
+    Args:
+        scene_box: scene box to apply to dataset
+    """
+
+    def __init__(self, scene_box=torch.tensor([[-1,-1,-1],[1,1,1]]), near_plane: float = 0.0, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.scene_box = scene_box
+        self.near_plane = near_plane
+
+    def _intersect_with_aabb(
+        self, rays_o, rays_d, aabb
+    ):
+        """Returns collection of valid rays within a specified near/far bounding box along with a mask
+        specifying which rays are valid
+
+        Args:
+            rays_o: (num_rays, 3) ray origins
+            rays_d: (num_rays, 3) ray directions
+            aabb: (2, 3) This is [min point (x,y,z), max point (x,y,z)]
+        """
+        # avoid divide by zero
+        dir_fraction = 1.0 / (rays_d + 1e-6)
+
+        # x
+
+        print(rays_o.shape, rays_d.shape, aabb.shape)
+
+        t1 = (aabb[0, 0] - rays_o[:, 0:1]) * dir_fraction[:, 0:1]
+        t2 = (aabb[1, 0] - rays_o[:, 0:1]) * dir_fraction[:, 0:1]
+        # y
+        t3 = (aabb[0, 1] - rays_o[:, 1:2]) * dir_fraction[:, 1:2]
+        t4 = (aabb[1, 1] - rays_o[:, 1:2]) * dir_fraction[:, 1:2]
+        # z
+        t5 = (aabb[0, 2] - rays_o[:, 2:3]) * dir_fraction[:, 2:3]
+        t6 = (aabb[1, 2] - rays_o[:, 2:3]) * dir_fraction[:, 2:3]
+
+        nears = torch.max(
+            torch.cat([torch.minimum(t1, t2), torch.minimum(t3, t4), torch.minimum(t5, t6)], dim=1), dim=1
+        ).values
+        fars = torch.min(
+            torch.cat([torch.maximum(t1, t2), torch.maximum(t3, t4), torch.maximum(t5, t6)], dim=1), dim=1
+        ).values
+
+        # clamp to near plane
+        near_plane = self.near_plane
+        nears = torch.clamp(nears, min=near_plane)
+        fars = torch.maximum(fars, nears + 1e-6)
+
+        return nears, fars
+
+    def set_nears_and_fars(self, ray_bundle):
+        """Intersects the rays with the scene box and updates the near and far values.
+        Populates nears and fars fields and returns the ray_bundle.
+
+        Args:
+            ray_bundle: specified ray bundle to operate on
+        """
+        aabb = self.scene_box
+        nears, fars = self._intersect_with_aabb(ray_bundle.origins, ray_bundle.directions, aabb)
+        ray_bundle.nears = nears[..., None]
+        ray_bundle.fars = fars[..., None]
+        return ray_bundle
+
+
 def create_arg_parser():
     parser = configargparse.ArgumentParser()
     parser.add_argument('--data_type', '--dataset_type', type=str, required=True, help='Dataset type',
@@ -202,25 +269,22 @@ def generate_dataset(args, output_path):
     rays_raw = torch.stack([get_persp_rays(H, W, K, torch.tensor(p)) for p in tqdm(poses[:,:3,:4])], 0) # [N, ro+rd, H, W, 3]
     
     rays = rays_raw.permute([0, 2, 3, 1, 4]).numpy().astype(np.float32) # [N, H, W, ro+rd, 3]
+
+
+    # Calcular los valores de near y far usando AABBBoxCollider
+    collider = AABBBoxCollider()
+    ray_bundle = type('', (), {})()  # Crear un objeto vacío
+    ray_bundle.origins = torch.tensor(rays[..., 0, :])  # Asignar los orígenes de los rayos
+    ray_bundle.directions = torch.tensor(rays[..., 1, :])  # Asignar las direcciones de los rayos
+
+    # Calcular los valores de near y far usando AABBBoxCollider
+    ray_bundle = collider.set_nears_and_fars(ray_bundle)
+    
+    # Asignar los valores calculados de near y far a los rayos
+    near = ray_bundle.nears.numpy()  # Convertir a numpy
+    far = ray_bundle.fars.numpy()  # Convertir a numpy
+
     print('Done.', rays.shape)
-
-
-    print('Generating ray visualization...')
-    rays_to_plot = rays[0:2,::6,::6]
-    ray_origins = rays_to_plot[..., 0, :] # origin
-    ray_directions = rays_to_plot[..., 1, :] # direction
-    
-    ray_endpoints = ray_origins + ray_directions * far
-    
-    points = np.concatenate([ray_origins.reshape(-1, 3), ray_endpoints.reshape(-1, 3)], axis=0) # 
-    
-    colors = np.zeros_like(points)
-    lenorigins = len(ray_origins.reshape(-1, 3))
-    colors[:lenorigins] = [0, 0, 255]  # Color for origins
-    colors[lenorigins:] = [255, 0, 0]  # Color for endpoints
-    
-    save_pc(points, colors, os.path.join(output_path, 'rays_visualization.ply'))
-    print('Ray visualization saved to', os.path.join(output_path, 'rays_visualization.ply'))
 
 
     print('Splitting train/valid/test rays ...')
@@ -276,7 +340,7 @@ def generate_dataset(args, output_path):
     # Save meta data
     meta_dict = {
         'H': H, 'W': W, 'focal': float(focal),
-        'near': float(near), 'far': float(far),
+        'near': near.tolist(), 'far': far.tolist(),
 
         'i_train': i_train.tolist() if isinstance(i_train, np.ndarray) else i_train,
         'i_val': i_val.tolist() if isinstance(i_val, np.ndarray) else i_val,

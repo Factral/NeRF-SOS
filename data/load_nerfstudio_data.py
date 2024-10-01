@@ -33,6 +33,14 @@ def pose_spherical(theta, phi, radius):
     return c2w
 
 
+def auto_orient(poses):
+    transform = torch.eye(4)
+    transform[:3, 3] = -translation
+    transform = transform[:3, :]
+    oriented_poses = transform @ poses
+    return oriented_poses, transform
+    
+
 def load_nerfstudio_data(basedir):
     """
     Load spectral data from the nerfacto format dataset.

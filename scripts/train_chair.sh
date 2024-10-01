@@ -1,8 +1,8 @@
 #! /bin/bash
 
 ###################################### config #######################################################
-SCENE=basil
-BATCH_SIZE=8
+SCENE=chair
+BATCH_SIZE=256
 PATCH_SIZE=64
 PATCH_STRIDE=6
 EXPNAME=${SCENE}_B${BATCH_SIZE}_P${PATCH_SIZE}_PS${PATCH_STRIDE}_1corr0.18,1,0.46,1_0.01geoCorr0.25,1,1,1

@@ -1,6 +1,6 @@
 expname = blender_paper_chair
 basedir = ./logs
-datadir = ./datasets/nerf_synthetic/chair
+datadir = ./data/datasets/nerf_synthetic/chair
 dataset_type = blender
 
 no_batching = True
@@ -11,7 +11,7 @@ lrate_decay = 500
 
 N_samples = 64
 N_importance = 128
-N_rand = 1024
+N_rand = 4096
 
 precrop_iters = 500
 precrop_frac = 0.5
